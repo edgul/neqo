@@ -30,7 +30,21 @@ fn wt_session_reject() {
         WebTransportSessionAcceptAction::Reject([Header::new(":status", "404")].to_vec());
     let (wt_session_id, _wt_session) = wt.negotiate_wt_session(&accept_res);
 
-    wt.check_session_closed_event_client(wt_session_id, &SessionCloseReason::Status(404));
+    wt.check_session_closed_event_client(wt_session_id,
+        &SessionCloseReason::Error(Error::HttpRequestRejected.code()));
+}
+
+
+#[test]
+fn wt_session_reject_2() {
+    let mut wt = WtTest::new();
+
+    let accept_res =
+        WebTransportSessionAcceptAction::Reject([Header::new(":status", "404")].to_vec());
+    let (wt_session_id, _wt_session) = wt.negotiate_wt_session(&accept_res);
+
+    wt.check_session_closed_event_client(wt_session_id,
+        &SessionCloseReason::Error(Error::HttpRequestRejected.code()));
 }
 
 #[test]
@@ -168,7 +182,8 @@ fn wt_session_response_with_redirect() {
 
     let (wt_session_id, _wt_session) = wt.negotiate_wt_session(&accept_res);
 
-    wt.check_session_closed_event_client(wt_session_id, &SessionCloseReason::Status(302));
+    wt.check_session_closed_event_client(wt_session_id,
+        &SessionCloseReason::Error(Error::HttpRequestRejected.code()));
 }
 
 #[test]

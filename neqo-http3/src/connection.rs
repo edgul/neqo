@@ -412,6 +412,7 @@ impl Http3Connection {
             };
             if done {
                 self.remove_send_stream(stream_id, conn);
+                self.stream_reset_send(conn,stream_id, Error::HttpRequestRejected.code()).unwrap();
             }
         }
         Ok(())
