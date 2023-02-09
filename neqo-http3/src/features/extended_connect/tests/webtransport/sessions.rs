@@ -34,6 +34,41 @@ fn wt_session_reject() {
 }
 
 #[test]
+fn wt_session_reject_2() {
+    // explicit test for Limiting Number of Simultaneous Sessions with HTTP_REQUEST_REJECTED
+    // See section 3.4, first bullet of:
+    // https://datatracker.ietf.org/doc/html/draft-ietf-webtrans-http3-04
+    let error_num: u32 = Error::HttpRequestRejected.code() as u32; 
+    const ERROR_MESSAGE: &str = "Server rejected session with error HTTP_REQUEST_REJECTED";
+    let mut wt = WtTest::new();
+    let mut wt_session = wt.create_wt_session();
+
+    WtTest::session_close_frame_server(&mut wt_session, error_num, ERROR_MESSAGE);
+    wt.exchange_packets();
+
+    wt.check_session_closed_event_client(
+        wt_session.stream_id(),
+        &SessionCloseReason::Clean {
+            error: error_num,
+            message: ERROR_MESSAGE.to_string(),
+        },
+    );
+}
+
+#[test]
+fn wt_session_reject_3() {
+    // explicit test for Limiting Number of Simultaneous Sessions with status 429 
+    // See section 3.4, second bullet of:
+    // https://datatracker.ietf.org/doc/html/draft-ietf-webtrans-http3-04
+    let mut wt = WtTest::new();
+    let accept_res =
+        WebTransportSessionAcceptAction::Reject([Header::new(":status", "429")].to_vec());
+    let (wt_session_id, _wt_session) = wt.negotiate_wt_session(&accept_res);
+
+    wt.check_session_closed_event_client(wt_session_id, &SessionCloseReason::Status(429));
+}
+
+#[test]
 fn wt_session_close_client() {
     let mut wt = WtTest::new();
     let mut wt_session = wt.create_wt_session();
